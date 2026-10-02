@@ -878,14 +878,23 @@ end = struct
         ~dir
         ~real_directory_targets:(Rules.directory_targets rules_produced)
         ~directory_targets;
-      (let subdirs_to_keep = Subdir_set.of_dir_set descendants_to_keep in
-       remove_old_artifacts ~dir ~rules_here ~subdirs_to_keep;
-       remove_old_sub_dirs_in_anonymous_actions_dir
-         ~dir:
-           (Path.Build.append_local
-              Dpath.Build.anonymous_actions_dir
-              (Path.Build.local dir))
-         ~subdirs_to_keep);
+      let* () =
+        let subdirs_to_keep = Subdir_set.of_dir_set descendants_to_keep in
+        let is_target path =
+          Path.Build.Map.mem rules_here.by_file_targets path
+          || Path.Build.Map.mem rules_here.by_directory_targets path
+        in
+        Memo.of_reproducible_fiber
+          (let open Fiber.O in
+           let+ () = Target_symlinks.prune_stale ~dir ~is_target ~subdirs_to_keep in
+           remove_old_artifacts ~dir ~rules_here ~subdirs_to_keep;
+           remove_old_sub_dirs_in_anonymous_actions_dir
+             ~dir:
+               (Path.Build.append_local
+                  Dpath.Build.anonymous_actions_dir
+                  (Path.Build.local dir))
+             ~subdirs_to_keep)
+      in
       let+ aliases =
         match context_type with
         | With_sources -> compute_alias_expansions ~collected ~dir

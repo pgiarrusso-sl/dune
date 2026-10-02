@@ -101,6 +101,7 @@ type t =
   ; execution_parameters :
       Context_name.t -> dir:Path.Build.t -> Execution_parameters.t Memo.t
   ; source_tree : (module Source_tree)
+  ; target_symlink_dirs : Path.Build.t list
   }
 
 let t : t Fdecl.t = Fdecl.create Dyn.opaque
@@ -114,6 +115,7 @@ let set
       ~implicit_default_alias
       ~execution_parameters
       ~source_tree
+      ~target_symlink_dirs
   =
   let contexts =
     Memo.lazy_ ~name:"Build_config.set" (fun () ->
@@ -133,5 +135,6 @@ let set
     ; implicit_default_alias
     ; execution_parameters
     ; source_tree
+    ; target_symlink_dirs
     }
 ;;

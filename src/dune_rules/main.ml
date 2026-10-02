@@ -98,6 +98,7 @@ let init ~sandboxing_preference () : unit =
     ~implicit_default_alias
     ~execution_parameters
     ~source_tree:(module Source_tree)
+    ~target_symlink_dirs:[ Install.Context.install_context.build_dir ]
 ;;
 
 let get () =
