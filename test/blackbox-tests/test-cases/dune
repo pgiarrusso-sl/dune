@@ -80,6 +80,11 @@
   (<> %{ocaml-config:system} win)))
 
 (cram
+ (applies_to install-link-lifetime)
+ (enabled_if
+  (<> %{ocaml-config:system} win)))
+
+(cram
  (applies_to output-obj)
  (enabled_if
   (and
