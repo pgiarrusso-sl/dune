@@ -111,6 +111,7 @@ val set
   -> execution_parameters:
        (Context_name.t -> dir:Path.Build.t -> Execution_parameters.t Memo.t)
   -> source_tree:(module Source_tree)
+  -> target_symlink_dirs:Path.Build.t list
   -> unit
 
 type t = private
@@ -127,6 +128,9 @@ type t = private
   ; execution_parameters :
       Context_name.t -> dir:Path.Build.t -> Execution_parameters.t Memo.t
   ; source_tree : (module Source_tree)
+  ; target_symlink_dirs : Path.Build.t list
+    (** Generated symlinks in these directories are withdrawn while their
+        referents are rebuilt, and restored when the referents are ready. *)
   }
 
 val get : unit -> t

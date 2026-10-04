@@ -577,8 +577,11 @@ module Internal = struct
           ~env:action.env
           ~build_deps
         >>= function
-        | Some produced_targets -> Fiber.return produced_targets
+        | Some produced_targets ->
+          let+ () = Target_symlinks.restore_pending targets produced_targets in
+          produced_targets
         | None ->
+          let* symlinks = Target_symlinks.remove targets in
           (* Step II. Remove stale targets both from the digest table and from
              the build directory. *)
           Rule_cache.Workspace_local.remove targets;
@@ -666,7 +669,8 @@ module Internal = struct
             ~rule_digest
             ~dynamic_deps_stages
             ~targets_digest:(Targets.Produced.digest produced_targets);
-          Fiber.return produced_targets
+          let+ () = Target_symlinks.restore symlinks produced_targets in
+          produced_targets
       in
       let* () =
         promote_targets
@@ -1132,8 +1136,9 @@ let run f =
     let* () = State.reset_progress () in
     let* () = State.reset_errors () in
     let* outcome =
-      Fiber.collect_errors (fun () ->
-        Memo.run_with_error_handler f ~handle_error_no_raise:report_early_exn)
+      Target_symlinks.with_ ~dirs:(Build_config.get ()).target_symlink_dirs (fun () ->
+        Fiber.collect_errors (fun () ->
+          Memo.run_with_error_handler f ~handle_error_no_raise:report_early_exn))
     in
     Dtemp.clear ();
     Sandbox.cleanup_pending_targets ();
